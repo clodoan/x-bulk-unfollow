@@ -294,7 +294,7 @@ function Manager() {
   const isPausedRef = useRef(false);
   const shouldAbortRef = useRef(false);
   const pauseResolverRef = useRef<(() => void) | null>(null);
-  const unfollowLockRef = useRef(false);
+  const [unfollowLock, setUnfollowLock] = useState(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   // ── Init: load storage ─────────────────────────────────────────────────────
@@ -477,7 +477,7 @@ function Manager() {
 
   // ── Single unfollow ────────────────────────────────────────────────────────
   const singleUnfollow = async (user: XUser) => {
-    if (unfollowLockRef.current || isProcessing) {
+    if (unfollowLock || isProcessing) {
       toast.warning('Please wait for the current operation to finish.');
       return;
     }
@@ -491,7 +491,7 @@ function Manager() {
       ),
       onConfirm: async () => {
         setConfirmDialog(d => ({ ...d, open: false }));
-        unfollowLockRef.current = true;
+        setUnfollowLock(true);
         try {
           await apiUnfollow(me!.id, user.id, dryRun, onRateInfo);
           setFollowing(prev => prev.filter(u => u.id !== user.id));
@@ -503,7 +503,7 @@ function Manager() {
           log(`Failed @${user.username}: ${(err as Error).message}`, 'error');
           toast.error(`Failed: ${(err as Error).message}`);
         } finally {
-          unfollowLockRef.current = false;
+          setUnfollowLock(false);
         }
       },
     });
@@ -904,7 +904,7 @@ function Manager() {
                       <td className="px-3 py-2 text-right">
                         <Button
                           variant="secondary" size="sm"
-                          disabled={isProcessing || unfollowLockRef.current}
+                          disabled={isProcessing || unfollowLock}
                           onClick={() => singleUnfollow(user)}
                         >
                           Unfollow
