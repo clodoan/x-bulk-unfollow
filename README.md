@@ -1,6 +1,20 @@
 # X Bulk Unfollow — Chrome Extension (Official X API v2)
 
-A private, rate-limit-aware Chrome extension that lets you bulk-unfollow accounts using the **official X (Twitter) API v2**.
+> **Personal tool.** Use at your own risk. Bulk actions on X can get your account restricted.
+
+A private, rate-limit-aware Chrome extension that lets you bulk-unfollow accounts using the **official X (Twitter) API v2** + intelligent suggestions (local heuristics + optional Grok).
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## Features
+
+- Uses official X API v2 (OAuth 2.0 PKCE)
+- Fully client-side — nothing leaves your browser except to `api.x.com` and (optionally) `api.x.ai`
+- Smart local scoring + optional Grok-powered analysis to decide who to unfollow first
+- Strong safety limits (18s minimum delay, session caps, warnings)
+- Search, filters, multi-select, CSV export, dry-run mode
+
+> **Reality check**: The X API only allows **50 unfollows per 15 minutes**. This tool is best for thoughtful, moderate cleanup rather than mass nuking.
 
 - Uses OAuth 2.0 PKCE (modern, secure, no secret keys to paste)
 - Fully client-side — nothing leaves your browser except calls to `api.x.com`
@@ -25,7 +39,7 @@ A private, rate-limit-aware Chrome extension that lets you bulk-unfollow account
 
 2. **Load the extension**
    - `chrome://extensions` → enable Developer mode → **Load unpacked**
-   - Select the `x-bulk-unfollow-extension` folder
+   - Select the cloned `x-bulk-unfollow` folder
    - Pin the extension
 
 3. **First run**
