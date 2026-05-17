@@ -1,5 +1,5 @@
 import React, {
-  useState, useEffect, useRef, useCallback, useMemo, Fragment,
+  useState, useEffect, useRef, useCallback, useMemo,
 } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Toaster, toast } from 'sonner';
@@ -40,7 +40,6 @@ const AI_WARNING = 'AI/local scores are suggestions only. You are fully responsi
 function ScoreBadge({ score, source, reasons }: ScoreResult) {
   const color =
     score < 35 ? 'danger' :
-    score < 48 ? 'warning' :
     score < 62 ? 'warning' :
     'success';
 
@@ -275,6 +274,7 @@ function Manager() {
   const [dryRun, setDryRun] = useState(false);
   const [renderLimit, setRenderLimit] = useState(RENDER_BATCH);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [sortByScore, setSortByScore] = useState(false);
 
   // Processing
   const [isProcessing, setIsProcessing] = useState(false);
@@ -297,27 +297,6 @@ function Manager() {
   const unfollowLockRef = useRef(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  // ── Derived state ──────────────────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    return following.filter(u => {
-      const matchesSearch = !q ||
-        u.username?.toLowerCase().includes(q) ||
-        u.name?.toLowerCase().includes(q) ||
-        u.description?.toLowerCase().includes(q);
-      const matchesFilter =
-        filterMode === 'verified' ? !!u.verified :
-        filterMode === 'non-verified' ? !u.verified :
-        true;
-      return matchesSearch && matchesFilter;
-    });
-  }, [following, searchQuery, filterMode]);
-
-  const visibleRows = useMemo(
-    () => filtered.slice(0, renderLimit),
-    [filtered, renderLimit],
-  );
-
   // ── Init: load storage ─────────────────────────────────────────────────────
   useEffect(() => {
     loadStorage().then(data => {
@@ -335,20 +314,6 @@ function Manager() {
       if (data.me) setMe(data.me);
     });
   }, []);
-
-  // ── Scroll-to-load-more ────────────────────────────────────────────────────
-  useEffect(() => {
-    const container = tableContainerRef.current;
-    if (!container) return;
-    const onScroll = () => {
-      const { scrollTop, clientHeight, scrollHeight } = container;
-      if (scrollTop + clientHeight >= scrollHeight - 300 && renderLimit < filtered.length) {
-        setRenderLimit(r => r + RENDER_BATCH);
-      }
-    };
-    container.addEventListener('scroll', onScroll);
-    return () => container.removeEventListener('scroll', onScroll);
-  }, [filtered.length, renderLimit]);
 
   // Reset render limit when filter changes
   useEffect(() => { setRenderLimit(RENDER_BATCH); }, [searchQuery, filterMode]);
@@ -433,17 +398,6 @@ function Manager() {
   }, [following, log]);
 
   // ── Smart sort ─────────────────────────────────────────────────────────────
-  const smartSort = () => {
-    if (!Object.keys(scores).length) runLocalAnalysis();
-    // Sorting is applied via the sortedFollowing derived value
-    setFilterMode('all');
-    setSearchQuery('');
-    setSortByScore(true);
-    log('Sorted by score — worst match first.');
-  };
-
-  const [sortByScore, setSortByScore] = useState(false);
-
   const sortedFollowing = useMemo(() => {
     if (!sortByScore || !Object.keys(scores).length) return following;
     return [...following].sort((a, b) => {
@@ -473,6 +427,20 @@ function Manager() {
     () => filteredFromSorted.slice(0, renderLimit),
     [filteredFromSorted, renderLimit],
   );
+
+  // ── Scroll-to-load-more ────────────────────────────────────────────────────
+  useEffect(() => {
+    const container = tableContainerRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const { scrollTop, clientHeight, scrollHeight } = container;
+      if (scrollTop + clientHeight >= scrollHeight - 300 && renderLimit < filteredFromSorted.length) {
+        setRenderLimit(r => r + RENDER_BATCH);
+      }
+    };
+    container.addEventListener('scroll', onScroll);
+    return () => container.removeEventListener('scroll', onScroll);
+  }, [filteredFromSorted.length, renderLimit]);
 
   // ── Grok analysis ──────────────────────────────────────────────────────────
   const [grokRunning, setGrokRunning] = useState(false);
