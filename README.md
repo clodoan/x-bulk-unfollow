@@ -16,14 +16,6 @@ A private, rate-limit-aware Chrome extension that lets you bulk-unfollow account
 
 > **Reality check**: The X API only allows **50 unfollows per 15 minutes**. This tool is best for thoughtful, moderate cleanup rather than mass nuking.
 
-- Uses OAuth 2.0 PKCE (modern, secure, no secret keys to paste)
-- Fully client-side — nothing leaves your browser except calls to `api.x.com`
-- Respects the 50 unfollows / 15 min rate limit with automatic backoff
-- Search, filter (verified / non-verified), multi-select, CSV export
-- Dry-run mode + confirmation dialogs for safety
-
-> **Important reality check**: The official API only allows **50 unfollows per 15 minutes**. If you follow 2,000 people it will take ~10 hours of the manager tab staying open. This is great for deliberate, safe cleanup of a few hundred accounts. For very large "nuke my following" use cases, most people use DOM-scraping tools instead (see below).
-
 ---
 
 ## Quick Start (5 minutes)
@@ -56,22 +48,50 @@ A private, rate-limit-aware Chrome extension that lets you bulk-unfollow account
 
 ---
 
+## Installation
+
+See the [Quick Start](#quick-start-5-minutes) section above.
+
+For development:
+
+```bash
+git clone https://github.com/clodoan/x-bulk-unfollow.git
+cd x-bulk-unfollow
+# Load the folder as an unpacked extension in chrome://extensions
+```
+
 ## Project Structure
 
 ```
-x-bulk-unfollow-extension/
+x-bulk-unfollow/
 ├── manifest.json
-├── background.js          # tiny MV3 service worker
-├── popup.html + popup.js  # small launcher
-├── manager.html + .css + .js   # the real app (all the logic lives here)
+├── background.js
+├── popup.html + popup.js
+├── manager.html + manager.css + manager.js   # Main UI + logic
+├── lib/scoring.js               # Pure local scoring engine (testable)
+├── tests/test-scoring.js
 ├── icons/
-│   ├── icon16.png
-│   ├── icon48.png
-│   └── icon128.png
 └── README.md
 ```
 
-Everything is vanilla JS, zero dependencies, CSP-safe.
+Everything is vanilla JavaScript, zero dependencies, and Manifest V3 compliant.
+
+## Screenshots
+
+> **Note**: Screenshots will be added soon. The UI includes:
+> - Clean dark-themed manager tab
+> - Score badges (red = strong unfollow candidate, green = keep)
+> - Smart Sort that surfaces lowest-value accounts first
+> - Grok analysis option (when xAI key is provided)
+
+## Development
+
+```bash
+# Run scoring tests
+node tests/test-scoring.js
+```
+
+When modifying the scoring logic, please add corresponding test cases in `tests/test-scoring.js`.
 
 ---
 
