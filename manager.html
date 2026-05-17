@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>X Bulk Unfollow • Manager</title>
+  <link rel="stylesheet" href="manager.css">
+  <script src="lib/scoring.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <div class="logo-dot">X</div>
+        <span>Bulk Unfollow</span>
+      </div>
+      <div id="user-pill" class="user-pill hidden">
+        <img id="user-avatar" alt="avatar" src="">
+        <span id="user-name">—</span>
+        <span class="handle" id="user-handle">@—</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="btn-settings" class="btn btn-secondary btn-sm icon-btn" title="Settings &amp; Disconnect">⚙︎</button>
+      <button id="btn-refresh" class="btn btn-secondary btn-sm" disabled>↻ Refresh List</button>
+      <button id="btn-connect" class="btn btn-primary">Connect with X</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Status / Hero -->
+    <div id="status-card" class="status-card">
+      <div>
+        <div class="label">ACCOUNTS YOU FOLLOW</div>
+        <div id="follow-count" class="big-number">—</div>
+        <div id="follow-sub" class="label" style="margin-top:4px">Load your following list to begin</div>
+      </div>
+      <div>
+        <button id="btn-load" class="btn btn-primary">Load Following List</button>
+      </div>
+    </div>
+
+    <!-- Toolbar (hidden until list loaded) -->
+    <div id="toolbar" class="toolbar hidden">
+      <input id="search" type="text" class="search-input" placeholder="Search name, @handle, or bio…" />
+
+      <div class="filter-group">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="verified">Verified</button>
+        <button class="filter-btn" data-filter="non-verified">Non-verified</button>
+      </div>
+
+      <button id="btn-run-analysis" class="btn btn-secondary btn-sm" title="Run fast local heuristics to score every account">Run Local Analysis</button>
+      <button id="btn-smart-sort" class="btn btn-secondary btn-sm" title="Sort by lowest score first (best unfollow candidates)">Smart Sort (lowest first)</button>
+      <button id="btn-grok-analyze" class="btn btn-secondary btn-sm" title="Use Grok for deeper, taste-based scoring (requires xAI key in Settings)" style="border-color:#444">Analyze with Grok</button>
+
+      <button id="btn-select-all" class="btn btn-secondary btn-sm">Select All</button>
+      <button id="btn-select-none" class="btn btn-secondary btn-sm">Clear</button>
+
+      <div style="flex:1"></div>
+
+      <span id="visible-count" class="label" style="margin-right:8px">0 / 0 shown</span>
+    </div>
+
+    <!-- Table -->
+    <div id="table-section" class="hidden">
+      <div class="table-container">
+        <table id="follow-table">
+          <thead>
+            <tr>
+              <th style="width:32px"><input type="checkbox" id="select-all-visible"></th>
+              <th style="width:42px"></th>
+              <th>Name / Handle</th>
+              <th style="width:68px" title="Local keep-worthiness score (higher = more valuable to keep)">Score</th>
+              <th style="width:90px">Followers</th>
+              <th>Bio</th>
+              <th style="width:110px; text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Bulk action bar -->
+      <div id="bulk-bar" class="bulk-bar hidden">
+        <span id="selected-count" class="count">0 selected</span>
+        <button id="btn-unfollow-selected" class="btn btn-danger">Unfollow Selected</button>
+        <label class="dry-run">
+          <input type="checkbox" id="dry-run-toggle"> Dry-run (no real calls)
+        </label>
+        <button id="btn-export" class="btn btn-secondary btn-sm">Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Empty / Loading state -->
+    <div id="empty-state" class="empty-state">
+      <div style="font-size:42px;opacity:0.15">👥</div>
+      <h3>No list loaded yet</h3>
+      <p>Connect to X and load your following list. The first load may take a few seconds for large accounts.</p>
+    </div>
+
+    <!-- Processor -->
+    <div id="processor" class="processor hidden">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px">
+        <strong>Processing queue</strong>
+        <span id="proc-status" class="label">Idle</span>
+      </div>
+
+      <div class="progress"><div id="proc-progress" class="progress-bar" style="width:0%"></div></div>
+
+      <div style="display:flex; gap:8px; align-items:center; margin:6px 0">
+        <button id="btn-pause" class="btn btn-secondary btn-sm">Pause</button>
+        <button id="btn-resume" class="btn btn-secondary btn-sm hidden">Resume</button>
+        <button id="btn-abort" class="btn btn-secondary btn-sm">Abort</button>
+        <span id="proc-eta" class="label" style="margin-left:auto"></span>
+      </div>
+
+      <div id="proc-log" class="log"></div>
+    </div>
+  </main>
+
+  <!-- Rate pill -->
+  <div id="rate-pill" class="rate-pill hidden">
+    <span>API:</span>
+    <span id="rate-remaining">—</span>
+    <span>/50</span>
+    <span id="rate-reset" style="margin-left:6px"></span>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="modal-settings" class="modal-backdrop">
+    <div class="modal">
+      <h2>Settings &amp; Connection</h2>
+
+      <div style="margin:12px 0">
+        <label style="display:block; font-size:12px; color:var(--text-muted); margin-bottom:4px">Your X App Client ID</label>
+        <input id="input-client-id" type="text" style="width:100%; background:var(--bg-elev); border:1px solid var(--border); color:var(--text); padding:8px; border-radius:6px" placeholder="Paste Client ID from developer.x.com">
+      </div>
+
+      <!-- xAI / Grok Analysis (optional) -->
+      <div style="margin:12px 0; padding:10px; background:#0f0f0f; border:1px solid #222; border-radius:8px">
+        <label style="display:block; font-size:12px; color:#aaa; margin-bottom:4px">xAI API Key (optional — for Grok-powered scoring)</label>
+        <input id="input-xai-key" type="password" style="width:100%; background:#111; border:1px solid #333; color:#ddd; padding:8px; border-radius:6px; font-family:monospace" placeholder="xai-... (stored only in this browser)">
+        <div style="font-size:10px; color:#666; margin-top:5px; line-height:1.3">
+          Enables "Analyze with Grok" for much smarter suggestions. Your key never leaves this extension. Get one at <a href="https://console.grok.x.ai" target="_blank" style="color:#888">console.grok.x.ai</a>.
+        </div>
+      </div>
+
+      <div style="margin:12px 0; font-size:12px">
+        <strong>OAuth Redirect URI</strong> (copy this into your X App → User authentication settings → OAuth 2.0 → Callback URLs)
+        <div id="redirect-uri" style="font-family:monospace; background:#0d0d0d; padding:6px 8px; border-radius:4px; margin-top:4px; font-size:11px; word-break:break-all; border:1px solid var(--border)"></div>
+      </div>
+
+      <div class="warning">
+        <strong>Important:</strong> You must create a Project + App at <a href="https://developer.x.com" target="_blank" style="color:#fda4af">developer.x.com</a> and enable OAuth 2.0 with the <code>follows.write</code>, <code>follows.read</code> and <code>users.read</code> scopes. Write endpoints usually require a paid tier.
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-disconnect" class="btn btn-secondary">Disconnect</button>
+        <button id="btn-save-settings" class="btn btn-primary">Save &amp; Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="modal-confirm" class="modal-backdrop">
+    <div class="modal">
+      <h2>Confirm bulk unfollow</h2>
+      <p id="confirm-text">You are about to unfollow <strong>XX</strong> accounts.</p>
+
+      <div class="warning">
+        This uses the official X API (50 unfollows / 15 min). The operation may take a long time. X may still apply additional limits or flags for rapid unfollow behavior. Use responsibly.
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-cancel-confirm" class="btn btn-secondary">Cancel</button>
+        <button id="btn-do-unfollow" class="btn btn-danger">Yes, start unfollowing</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="manager.js"></script>
+</body>
+</html>

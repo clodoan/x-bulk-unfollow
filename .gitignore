@@ -1,0 +1,39 @@
+# Chrome Extension
+*.crx
+*.pem
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment / Secrets (very important)
+.env
+.env.local
+*.key
+secrets/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+desktop.ini
+
+# Test artifacts (if any in future)
+coverage/
