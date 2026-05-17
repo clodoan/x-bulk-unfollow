@@ -37,3 +37,8 @@ desktop.ini
 
 # Test artifacts (if any in future)
 coverage/
+
+# Build output & dependencies
+node_modules/
+dist/
+package-lock.json
